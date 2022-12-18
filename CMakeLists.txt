@@ -192,9 +192,24 @@ if(V8_FOUND)
   include_directories(${V8_INCLUDE_DIR})
   add_definitions(-DSCRIPT_ENGINE_V8=1)
 
+  # Most distributions enable pointer compression.
+  set(DISABLE_POINTER_COMPRESSION 0)
+  if(LINUX)
+    find_program(LSB_RELEASE_EXEC lsb_release)
+    execute_process(COMMAND ${LSB_RELEASE_EXEC} -is
+      OUTPUT_VARIABLE LSB_RELEASE_ID_SHORT
+      OUTPUT_STRIP_TRAILING_WHITESPACE
+      )
+    if(LSB_RELEASE_ID_SHORT STREQUAL "Debian")
+      set(DISABLE_POINTER_COMPRESSION 1)
+    endif()
+  endif()
+
   # pointers compression doesn't work on 32bit machines
   if(CMAKE_SIZEOF_VOID_P EQUAL 8)
-    add_definitions(-DV8_COMPRESS_POINTERS)
+    if(DISABLE_POINTER_COMPRESSION EQUAL 0)
+      add_definitions(-DV8_COMPRESS_POINTERS)
+    endif()
   endif()
 
   message(STATUS "Optional V8 library found. Enabling V8 scripting engine.")
